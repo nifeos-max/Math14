@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>لعبة مقارنة الأعداد – جدول المنازل</title>
+  <title>لعبة مقارنة الأعداد – جدول المنازل (من اليمين لليسار)</title>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;700&display=swap" rel="stylesheet">
   <style>
     :root{
@@ -48,8 +48,8 @@
 
     /* جدول المنازل */
     .pv-wrap{overflow-x:auto}
-    table.pv{border-collapse:separate;border-spacing:0;min-width:720px;width:100%;text-align:center;direction:rtl}
-    .pv th,.pv td{border:1px solid var(--grid);padding:10px;min-width:48px}
+    table.pv{border-collapse:separate;border-spacing:0;min-width:720px;width:100%;text-align:center}
+    .pv th,.pv td{border:1px solid var(--grid);padding:10px;min-width:52px}
     .pv thead th{background:#f1f5f9;font-weight:800}
     .pv .digit{font-weight:800;font-size:22px;display:inline-flex;align-items:center;justify-content:center;min-width:28px;min-height:36px;border-radius:8px}
     .pv .diff{background:var(--highlight);outline:2px solid var(--highlightBorder)}
@@ -66,8 +66,8 @@
     <div class="card">
       <div class="header">
         <div>
-          <h1 class="title">🧮 لعبة مقارنة الأعداد (جدول المنازل)</h1>
-          <p class="subtitle">اختر الإشارة الصحيحة بين عددين عشوائيين (٢٠ مسألة). ستظهر تغذية راجعة تُحاذي العددين داخل جدول المنازل، والآحاد دائمًا في أقصى اليمين.</p>
+          <h1 class="title">🧮 لعبة مقارنة الأعداد (جدول المنازل من اليمين لليسار)</h1>
+          <p class="subtitle">اختر الإشارة الصحيحة بين عددين عشوائيين (٢٠ مسألة). تظهر تغذية راجعة بمحاذاة العددين داخل جدول المنازل. <strong>الآحاد في أقصى اليمين</strong> ثم العشرات فالمئات… حتى مئات الملايين يسارًا.</p>
         </div>
         <div class="kpis">
           <div class="chip"><span>السؤال</span><strong id="qIdx">١ / ٢٠</strong></div>
@@ -129,9 +129,7 @@
     const MAX = 999_999_999; // ٩٩٩,٩٩٩,٩٩٩
 
     // تحويل الأرقام إلى أرقام عربية-هندية
-    function toArabicDigits(x){
-      return String(x).replace(/\d/g, d => "٠١٢٣٤٥٦٧٨٩"[d]);
-    }
+    function toArabicDigits(x){ return String(x).replace(/\d/g, d => "٠١٢٣٤٥٦٧٨٩"[d]); }
 
     // خلط فيشر–ياتس
     function shuffle(arr){
@@ -177,19 +175,13 @@
 
     skipBtn.addEventListener('click', ()=>{ if(!locked){ locked=true; showFeedback(null); nextBtn.disabled=false; } });
 
-    function correctSign(a,b){
-      if(a<b) return '<';
-      if(a>b) return '>';
-      return '=';
-    }
+    function correctSign(a,b){ return a<b?'<':a>b?'>':'='; }
 
     function renderOptions(a,b){
       elOpts.innerHTML='';
-      const signs = shuffle(['<','>','=']);
-      signs.forEach(s=>{
-        const btn = document.createElement('button');
-        btn.className='btn';
-        btn.textContent = s;
+      shuffle(['<','>','=']).forEach(s=>{
+        const btn=document.createElement('button');
+        btn.className='btn'; btn.textContent=s;
         btn.addEventListener('click', ()=>handleChoice(s,a,b,btn));
         elOpts.appendChild(btn);
       });
@@ -199,8 +191,7 @@
       if(locked) return;
       locked=true;
       const truth = correctSign(a,b);
-      // تلوين الأزرار
-      ;[...elOpts.children].forEach(bn=>{
+      [...elOpts.children].forEach(bn=>{
         bn.disabled=true;
         if(bn.textContent===truth) bn.classList.add('ok');
         else if(bn===btn) bn.classList.add('bad');
@@ -227,7 +218,7 @@
         elRes.textContent = 'إجابة غير صحيحة ❌';
         elWhy.textContent = explain(a,b,truth);
       }
-      renderPlaceValueTable(a,b); // جدول المنازل فقط
+      renderPlaceValueTable(a,b);
     }
 
     function explain(a,b,truth){
@@ -237,8 +228,8 @@
       return `العدد ${A} أصغر من ${B}.`;
     }
 
-    // ====== جدول المنازل (الآحاد أقصى اليمين) ======
-    const placeLabels = [
+    // ====== جدول المنازل (آحاد على اليمين) ======
+    const HIGH_TO_LOW = [
       'مئات الملايين','عشرات الملايين','الملايين',
       'مئات الألوف','عشرات الألوف','الألوف',
       'المئات','العشرات','الآحاد'
@@ -246,36 +237,38 @@
 
     function renderPlaceValueTable(a,b){
       const sa = String(a), sb = String(b);
-      const len = Math.max(sa.length, sb.length);     // حتى 9 منازل
-      const labels = placeLabels.slice(placeLabels.length - len); // أعلى منزلة..الآحاد
+      const len = Math.max(sa.length, sb.length);
 
-      // محاذاة يسارًا حتى يتساوى الطول: index 0 = أعلى منزلة (يسار)، index len-1 = الآحاد (يمين)
+      // عناوين المنازل من أعلى منزلة إلى الآحاد (بطول العدد الأكبر)
+      const labels = HIGH_TO_LOW.slice(HIGH_TO_LOW.length - len); // يسار→يمين في الجدول، والآحاد آخر عمود
+
+      // نحاذي الأعداد يسارًا ليكون index 0 أعلى منزلة و index len-1 الآحاد
       const pa = sa.padStart(len,' ');
       const pb = sb.padStart(len,' ');
 
-      // أول منزلة مختلفة (من الأعلى إلى الآحاد)
+      // أول منزلة مختلفة تُحسب من أعلى منزلة إلى الآحاد
       let firstDiff = -1;
       for(let i=0;i<len;i++){
         if(pa[i]!==pb[i]){ firstDiff = i; break; }
       }
 
-      // رؤوس الأعمدة: أعلى منزلة -> الآحاد (لا نعكس)
-      const head = labels.map(l=>`<th>${l}</th>`).join('');
+      // نبني الرؤوس والصفوف بنفس ترتيب labels (أعلى منزلة ← الآحاد)
+      const head = labels.map(l => `<th>${l}</th>`).join('');
 
       const aRow = Array.from({length: len}, (_, i) => {
         const ch = pa[i] === ' ' ? '' : toArabicDigits(pa[i]);
-        const mark = (i===firstDiff) ? ' diff':'';
+        const mark = (i === firstDiff) ? ' diff' : '';
         return `<td><span class="digit${mark}" style="color:#2563eb">${ch}</span></td>`;
       }).join('');
 
       const bRow = Array.from({length: len}, (_, i) => {
         const ch = pb[i] === ' ' ? '' : toArabicDigits(pb[i]);
-        const mark = (i===firstDiff) ? ' diff':'';
+        const mark = (i === firstDiff) ? ' diff' : '';
         return `<td><span class="digit${mark}" style="color:#f59e0b">${ch}</span></td>`;
       }).join('');
 
       pvContainer.innerHTML = `
-        <table class="pv" aria-label="جدول منازل يوضّح محاذاة العددين">
+        <table class="pv" aria-label="جدول منازل يوضّح محاذاة العددين (آحاد يمينًا)">
           <thead><tr>${head}</tr></thead>
           <tbody>
             <tr><td class="rowTag" colspan="${len}" style="text-align:right;border:none;padding:6px 0 4px 0">العدد الأوّل</td></tr>
@@ -304,7 +297,7 @@
         if(pct===100) remark='امتياز! مقارنة دقيقة جدًا 👏';
         else if(pct>=85) remark='رائع! أداء قوي جدًا.';
         else if(pct>=70) remark='جيد جدًا! استمر.';
-        else remark='عمل جيد، ومع مزيد من التدريب ستتحسن النتائج.';
+        else remark='عمل جيّد، ومع مزيد من التدريب ستتحسّن النتائج.';
         finalRemark.textContent = `${toArabicDigits(pct)}٪ — ${remark}`;
         return;
       }
